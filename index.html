@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Wunderkammer Karte">
+<meta name="theme-color" content="#2e7d32">
+<title>Wunderkammer – Schulen-Tracking</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root { --green:#2e7d32; --yellow:#f9a825; --gray:#757575; --red:#c62828; --bg:#fafafa; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; background:var(--bg); color:#222; }
+  #app { display:flex; flex-direction:column; height:100vh; }
+  header { padding:10px 14px; background:#fff; border-bottom:1px solid #e0e0e0; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  header h1 { font-size:15px; margin:0; font-weight:600; flex:1 1 auto; }
+  header .meta { font-size:11px; color:#666; }
+  .filters { display:flex; gap:6px; flex-wrap:wrap; padding:8px 14px; background:#fff; border-bottom:1px solid #e0e0e0; }
+  .filter-btn { padding:6px 12px; border:1px solid #ccc; border-radius:16px; background:#fff; font-size:12px; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:5px; }
+  .filter-btn .dot { display:inline-block; width:10px; height:10px; border-radius:50%; }
+  .filter-btn.active { background:#333; color:#fff; border-color:#333; }
+  .filter-btn .count { opacity:0.7; font-size:11px; }
+  #map { flex:1; width:100%; }
+  .pin { border:2px solid #fff; border-radius:50% 50% 50% 0; width:28px; height:28px; transform:rotate(-45deg); box-shadow:0 2px 5px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; }
+  .pin.green { background:var(--green); }
+  .pin.yellow { background:var(--yellow); }
+  .pin.gray { background:var(--gray); }
+  .pin.red { background:var(--red); }
+  .pin-label { transform:rotate(45deg); color:#fff; font-weight:700; font-size:12px; }
+  .popup { min-width:240px; font-size:13px; line-height:1.45; }
+  .popup .title { font-weight:600; font-size:14px; margin-bottom:6px; }
+  .popup .status { display:inline-block; padding:2px 8px; border-radius:10px; color:#fff; font-size:11px; margin-bottom:8px; }
+  .status.green { background:var(--green); } .status.yellow { background:var(--yellow); } .status.gray { background:var(--gray); } .status.red { background:var(--red); }
+  .popup .field { margin:4px 0; }
+  .popup .field b { color:#555; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+  .popup .navi { display:inline-block; margin-top:8px; padding:8px 14px; background:#1976d2; color:#fff; border-radius:6px; text-decoration:none; font-weight:500; font-size:13px; }
+  .popup .navi:hover { background:#1565c0; }
+  .popup .email { display:inline-block; margin-top:4px; padding:6px 10px; background:#f0f0f0; color:#333; border-radius:6px; text-decoration:none; font-size:12px; }
+  @media (max-width:640px) { header h1 { font-size:14px; } .filter-btn { font-size:11px; padding:5px 10px; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🏫 Wunderkammer – Schulen-Tracking</h1>
+    <div class="meta" id="meta"></div>
+  </header>
+  <div class="filters" id="filters"></div>
+  <div id="map"></div>
+</div>
+<script>
+// Daten werden bei jedem Update automatisch regeneriert. Letzter Stand: siehe "lastUpdate"
+const DATA = {
+  lastUpdate: "2026-04-15",
+  schools: [
+    { name:"Gymnasium Höchstadt a.d.Aisch", ort:"Höchstadt a.d.Aisch", lat:49.7046, lng:10.8050, status:"Abgeholt", color:"green", material:"Diverse Lehrmittel", kontakt:"Herr StD Wolfram Degen" },
+    { name:"Wolfgang-Borchert-Gymnasium Langenzenn", ort:"Langenzenn", lat:49.4942, lng:10.7922, status:"Abgeholt", color:"green", material:"Overhead-Folienordner, Wandkarten, Bio-Sammlung", kontakt:"Frau Bonita Junge (Bio-Sammlungsleiterin)" },
+    { name:"Grundschule Garmisch-Partenkirchen", ort:"Garmisch-Partenkirchen", lat:47.4922, lng:11.0956, status:"Abgeholt", color:"green", material:"Rollkarten, Landkarten", kontakt:"Frau K. Strobel" },
+    { name:"Hans-Sachs-Mittelschule Fürth", ort:"Fürth", lat:49.4776, lng:10.9886, status:"Abgeholt", color:"green", material:"Material abgeholt", kontakt:"Frau Keusch" },
+    { name:"Grundschule Greding", ort:"Greding", lat:49.0500, lng:11.3622, status:"Kein Material", color:"gray", material:"", kontakt:"Frau Sophie Schneider" },
+    { name:"Sigmund-Schuckert-Gymnasium Nürnberg", ort:"Nürnberg", lat:49.4521, lng:11.0767, status:"Abgeholt", color:"green", material:"Geo-Wandkarten, Stempel", kontakt:"Frau Andrea Böh (Fachbetreuerin Geo)" },
+    { name:"Mittelschule Baiersdorf", ort:"Baiersdorf", lat:49.6571, lng:11.0310, status:"Offen – Besuch verschoben", color:"yellow", material:"", kontakt:"Frau Stahl" },
+    { name:"Christian-von-Bomhard-Schule", ort:"Uffenheim", lat:49.5433, lng:10.2332, status:"Offen – Besuch ausstehend", color:"yellow", material:"", kontakt:"Herr Hirsch / Frau Stieglitz" },
+    { name:"Grundschule (0765) Bayern", ort:"Bayern", lat:48.9000, lng:11.4000, status:"Offen – Fotos angefragt", color:"yellow", material:"", kontakt:"Frau Kristina Hartung" },
+    { name:"Grund- und Mittelschule Kleinwallstadt", ort:"Kleinwallstadt", lat:49.8822, lng:9.1791, status:"Offen – Besuch ausstehend", color:"yellow", material:"", kontakt:"Frau Anna Steinbauer" },
+    { name:"Regiomontanus-Gymnasium Haßfurt", ort:"Haßfurt", lat:50.0371, lng:10.5164, status:"Absage", color:"red", material:"", kontakt:"Frau Christine Weber" },
+    { name:"Paul-Gerhardt-Mittelschule Kahl a.Main", ort:"Kahl am Main", lat:50.0692, lng:9.0003, status:"Offen – Besuch ausstehend", color:"yellow", material:"Spende angeboten (Details via Nachfass)", kontakt:"Frau Dr. Merkle (kmerkle@pgs-kahl.de)", email:"kmerkle@pgs-kahl.de" },
+    { name:"Grundschule München Agilolfingerplatz 1", ort:"München", lat:48.1123, lng:11.5856, status:"Kein Material", color:"gray", material:"", kontakt:"Claudia Tholey (komm. Schulleiterin)" },
+  ]
+};
+
+const COLOR_LABELS = { green:"Abgeholt", yellow:"Offen", gray:"Kein Material", red:"Absage" };
+
+const map = L.map('map', { zoomControl: true }).setView([49.5, 11.0], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '© OpenStreetMap'
+}).addTo(map);
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -28],
+    html: `<div class="pin ${color}"></div>`
+  });
+}
+
+function esc(s) { return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function popupHtml(s) {
+  const naviUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&destination_place_id=${encodeURIComponent(s.name + ', ' + s.ort)}`;
+  let html = `<div class="popup">`;
+  html += `<div class="title">${esc(s.name)}</div>`;
+  html += `<span class="status ${s.color}">${esc(s.status)}</span>`;
+  html += `<div class="field"><b>Ort</b><br>${esc(s.ort)}</div>`;
+  if (s.kontakt) html += `<div class="field"><b>Kontakt</b><br>${esc(s.kontakt)}</div>`;
+  if (s.material) html += `<div class="field"><b>Material</b><br>${esc(s.material)}</div>`;
+  html += `<a class="navi" href="${naviUrl}" target="_blank" rel="noopener">🧭 Navi starten</a>`;
+  if (s.email) html += ` <a class="email" href="mailto:${esc(s.email)}">✉️ Email</a>`;
+  html += `</div>`;
+  return html;
+}
+
+const layers = { green:[], yellow:[], gray:[], red:[] };
+DATA.schools.forEach(s => {
+  const m = L.marker([s.lat, s.lng], { icon: makeIcon(s.color) }).bindPopup(popupHtml(s));
+  layers[s.color].push(m);
+  m.addTo(map);
+});
+
+// Filters
+const filters = document.getElementById('filters');
+const counts = { green:0, yellow:0, gray:0, red:0 };
+DATA.schools.forEach(s => counts[s.color]++);
+
+const state = { green:true, yellow:true, gray:true, red:true };
+
+function renderFilters() {
+  filters.innerHTML = '';
+  Object.keys(COLOR_LABELS).forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (state[c] ? ' active' : '');
+    btn.innerHTML = `<span class="dot" style="background:var(--${c==='green'?'green':c==='yellow'?'yellow':c==='gray'?'gray':'red'})"></span> ${COLOR_LABELS[c]} <span class="count">(${counts[c]})</span>`;
+    btn.onclick = () => {
+      state[c] = !state[c];
+      layers[c].forEach(m => state[c] ? m.addTo(map) : map.removeLayer(m));
+      renderFilters();
+    };
+    filters.appendChild(btn);
+  });
+}
+renderFilters();
+
+document.getElementById('meta').textContent = `${DATA.schools.length} Schulen · Stand ${DATA.lastUpdate}`;
+
+// Auto-fit bounds on load
+if (DATA.schools.length) {
+  const group = L.featureGroup(Object.values(layers).flat());
+  map.fitBounds(group.getBounds().pad(0.1));
+}
+</script>
+</body>
+</html>
