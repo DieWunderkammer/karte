@@ -51,23 +51,141 @@
   <div id="map"></div>
 </div>
 <script>
-// Daten werden bei jedem Update automatisch regeneriert. Letzter Stand: siehe "lastUpdate"
+// Daten werden automatisch aus Schulbesuche_Maps_Import.csv regeneriert. NICHT HÄNDISCH EDITIEREN — nächster Auto-Run überschreibt.
 const DATA = {
-  lastUpdate: "2026-04-15",
-  schools: [
-    { name:"Gymnasium Höchstadt a.d.Aisch", ort:"Höchstadt a.d.Aisch", lat:49.7046, lng:10.8050, status:"Abgeholt", color:"green", material:"Diverse Lehrmittel", kontakt:"Herr StD Wolfram Degen" },
-    { name:"Wolfgang-Borchert-Gymnasium Langenzenn", ort:"Langenzenn", lat:49.4942, lng:10.7922, status:"Abgeholt", color:"green", material:"Overhead-Folienordner, Wandkarten, Bio-Sammlung", kontakt:"Frau Bonita Junge (Bio-Sammlungsleiterin)" },
-    { name:"Grundschule Garmisch-Partenkirchen", ort:"Garmisch-Partenkirchen", lat:47.4922, lng:11.0956, status:"Abgeholt", color:"green", material:"Rollkarten, Landkarten", kontakt:"Frau K. Strobel" },
-    { name:"Hans-Sachs-Mittelschule Fürth", ort:"Fürth", lat:49.4776, lng:10.9886, status:"Abgeholt", color:"green", material:"Material abgeholt", kontakt:"Frau Keusch" },
-    { name:"Grundschule Greding", ort:"Greding", lat:49.0500, lng:11.3622, status:"Kein Material", color:"gray", material:"", kontakt:"Frau Sophie Schneider" },
-    { name:"Sigmund-Schuckert-Gymnasium Nürnberg", ort:"Nürnberg", lat:49.4521, lng:11.0767, status:"Abgeholt", color:"green", material:"Geo-Wandkarten, Stempel", kontakt:"Frau Andrea Böh (Fachbetreuerin Geo)" },
-    { name:"Mittelschule Baiersdorf", ort:"Baiersdorf", lat:49.6571, lng:11.0310, status:"Offen – Besuch verschoben", color:"yellow", material:"", kontakt:"Frau Stahl" },
-    { name:"Christian-von-Bomhard-Schule", ort:"Uffenheim", lat:49.5433, lng:10.2332, status:"Offen – Besuch ausstehend", color:"yellow", material:"", kontakt:"Herr Hirsch / Frau Stieglitz" },
-    { name:"Grundschule (0765) Bayern", ort:"Bayern", lat:48.9000, lng:11.4000, status:"Offen – Fotos angefragt", color:"yellow", material:"", kontakt:"Frau Kristina Hartung" },
-    { name:"Grund- und Mittelschule Kleinwallstadt", ort:"Kleinwallstadt", lat:49.8822, lng:9.1791, status:"Offen – Besuch ausstehend", color:"yellow", material:"", kontakt:"Frau Anna Steinbauer" },
-    { name:"Regiomontanus-Gymnasium Haßfurt", ort:"Haßfurt", lat:50.0371, lng:10.5164, status:"Absage", color:"red", material:"", kontakt:"Frau Christine Weber" },
-    { name:"Paul-Gerhardt-Mittelschule Kahl a.Main", ort:"Kahl am Main", lat:50.0692, lng:9.0003, status:"Offen – Besuch ausstehend", color:"yellow", material:"Spende angeboten (Details via Nachfass)", kontakt:"Frau Dr. Merkle (kmerkle@pgs-kahl.de)", email:"kmerkle@pgs-kahl.de" },
-    { name:"Grundschule München Agilolfingerplatz 1", ort:"München", lat:48.1123, lng:11.5856, status:"Kein Material", color:"gray", material:"", kontakt:"Claudia Tholey (komm. Schulleiterin)" },
+  "lastUpdate": "2026-04-15",
+  "schools": [
+    {
+      "name": "Gymnasium Höchstadt a.d.Aisch",
+      "ort": "Höchstadt a.d.Aisch",
+      "lat": 49.7046,
+      "lng": 10.805,
+      "status": "Abgeholt",
+      "color": "green",
+      "material": "Diverse Lehrmittel",
+      "kontakt": "Herr StD Wolfram Degen"
+    },
+    {
+      "name": "Wolfgang-Borchert-Gymnasium Langenzenn",
+      "ort": "Langenzenn",
+      "lat": 49.4942,
+      "lng": 10.7922,
+      "status": "Abgeholt",
+      "color": "green",
+      "material": "Overhead-Folienordner, Wandkarten, Bio-Sammlung",
+      "kontakt": "Frau Bonita Junge (Bio-Sammlungsleiterin)"
+    },
+    {
+      "name": "Grundschule Garmisch-Partenkirchen",
+      "ort": "Garmisch-Partenkirchen",
+      "lat": 47.4922,
+      "lng": 11.0956,
+      "status": "Abgeholt",
+      "color": "green",
+      "material": "Rollkarten, Landkarten",
+      "kontakt": "Frau K. Strobel"
+    },
+    {
+      "name": "Hans-Sachs-Mittelschule Fürth",
+      "ort": "Fürth",
+      "lat": 49.4776,
+      "lng": 10.9886,
+      "status": "Abgeholt",
+      "color": "green",
+      "material": "Material abgeholt",
+      "kontakt": "Frau Keusch"
+    },
+    {
+      "name": "Grundschule Greding",
+      "ort": "Greding",
+      "lat": 49.05,
+      "lng": 11.3622,
+      "status": "Kein Material",
+      "color": "gray",
+      "material": "",
+      "kontakt": "Frau Sophie Schneider"
+    },
+    {
+      "name": "Sigmund-Schuckert-Gymnasium Nürnberg",
+      "ort": "Nürnberg",
+      "lat": 49.4521,
+      "lng": 11.0767,
+      "status": "Abgeholt",
+      "color": "green",
+      "material": "Geo-Wandkarten, Stempel",
+      "kontakt": "Frau Andrea Böh (Fachbetreuerin Geo)"
+    },
+    {
+      "name": "Mittelschule Baiersdorf",
+      "ort": "Baiersdorf",
+      "lat": 49.6571,
+      "lng": 11.031,
+      "status": "Offen – Besuch verschoben",
+      "color": "yellow",
+      "material": "",
+      "kontakt": "Frau Stahl"
+    },
+    {
+      "name": "Christian-von-Bomhard-Schule",
+      "ort": "Uffenheim",
+      "lat": 49.5433,
+      "lng": 10.2332,
+      "status": "Offen – Besuch ausstehend",
+      "color": "yellow",
+      "material": "",
+      "kontakt": "Herr Hirsch / Frau Stieglitz"
+    },
+    {
+      "name": "Grundschule (0765) Bayern",
+      "ort": "Bayern",
+      "lat": 48.9,
+      "lng": 11.4,
+      "status": "Offen – Fotos angefragt",
+      "color": "yellow",
+      "material": "",
+      "kontakt": "Frau Kristina Hartung"
+    },
+    {
+      "name": "Grund- und Mittelschule Kleinwallstadt",
+      "ort": "Kleinwallstadt",
+      "lat": 49.8822,
+      "lng": 9.1791,
+      "status": "Offen – Besuch ausstehend",
+      "color": "yellow",
+      "material": "",
+      "kontakt": "Frau Anna Steinbauer"
+    },
+    {
+      "name": "Regiomontanus-Gymnasium Haßfurt",
+      "ort": "Haßfurt",
+      "lat": 50.0371,
+      "lng": 10.5164,
+      "status": "Absage",
+      "color": "red",
+      "material": "",
+      "kontakt": "Frau Christine Weber"
+    },
+    {
+      "name": "Paul-Gerhardt-Mittelschule Kahl a.Main",
+      "ort": "Kahl a. Main",
+      "lat": 50.0692,
+      "lng": 9.0003,
+      "status": "Offen – Besuch ausstehend",
+      "color": "yellow",
+      "material": "Spende angeboten (Details via Nachfass)",
+      "kontakt": "Frau Dr. Merkle (kmerkle@pgs-kahl.de)",
+      "email": "kmerkle@pgs-kahl.de"
+    },
+    {
+      "name": "Grundschule München Agilolfingerplatz 1",
+      "ort": "München",
+      "lat": 48.1123,
+      "lng": 11.5856,
+      "status": "Kein Material",
+      "color": "gray",
+      "material": "",
+      "kontakt": "Claudia Tholey (komm. Schulleiterin)"
+    }
   ]
 };
 
@@ -108,7 +226,6 @@ DATA.schools.forEach(s => {
   m.addTo(map);
 });
 
-// Filters
 const filters = document.getElementById('filters');
 const counts = { green:0, yellow:0, gray:0, red:0 };
 DATA.schools.forEach(s => counts[s.color]++);
@@ -133,7 +250,6 @@ renderFilters();
 
 document.getElementById('meta').textContent = `${DATA.schools.length} Schulen · Stand ${DATA.lastUpdate}`;
 
-// Auto-fit bounds on load
 if (DATA.schools.length) {
   const group = L.featureGroup(Object.values(layers).flat());
   map.fitBounds(group.getBounds().pad(0.1));
